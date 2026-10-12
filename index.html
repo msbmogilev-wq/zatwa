@@ -466,8 +466,8 @@
         {
           id: "d3",
           e: "🥩",
-          t: "Колбаса сервелат варёно-копчёный «Барбадос»",
-          note: "",
+          t: "Колбаса «Барбадос» или финский сервелат в чёрной упаковке",
+          note: "Принести целой палкой, не нарезать дома!",
           n: 6,
         },
         {
@@ -678,13 +678,16 @@
             .join("&");
           return fetch(API_URL + "?" + q, { redirect: "follow" }).then(
             function (r) {
-              return r.json();
+              return r.text().then(function (x) {
+                try { return JSON.parse(x); } catch (z) { throw { code: "html", message: "HTTP " + r.status }; }
+              });
             },
           );
         }
         function refresh() {
           return call({ action: "get" })
             .then(function (m) {
+              if (m && m.error) throw { code: "srv", message: m.error };
               if (!cb) return;
               cb({
                 docs: Object.keys(m).map(function (k) {
@@ -702,7 +705,7 @@
               setStatus(
                 e && e.code === "nourl"
                   ? "Не указана ссылка на список (API_URL в index.html)."
-                  : "Нет связи со списком. Проверьте интернет и обновите страницу.",
+                  : e && e.code === "html" ? "Список вернул страницу Google вместо данных (" + e.message + "). Проверьте доступ «Все» у развёртывания и разрешения скрипта." : e && e.code === "srv" ? "Ошибка скрипта: " + e.message : "Нет связи со списком (" + (e && e.message ? e.message : "сеть") + "). Проверьте интернет и обновите страницу.",
                 true,
               );
             });
